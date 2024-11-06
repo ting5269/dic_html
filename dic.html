@@ -4,7 +4,7 @@
   <style>
     body {
       font-family: 'Microsoft JhengHei', sans-serif;
-      background: linear-gradient(135deg, #1a1a2e, #16213e);
+      background: linear-gradient(135deg, #1a1a2e, #2978b5, #16213e);
       color: #fff;
       margin: 0;
       min-height: 100vh;
@@ -15,72 +15,71 @@
     
     .container {
       background: rgba(255, 255, 255, 0.1);
-      backdrop-filter: blur(10px);
+      backdrop-filter: blur(15px);
       border-radius: 20px;
       padding: 2rem;
       box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
       width: 90%;
-      max-width: 600px;
+      max-width: 500px;
     }
     
     .title {
       text-align: center;
-      color: #ffd700;
+      color: #29c7ac;
       font-size: 2rem;
-      margin-bottom: 2rem;
-      text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+      margin-bottom: 1.5rem;
+      text-shadow: 0 0 15px rgba(41, 199, 172, 0.7);
     }
     
     .game-menu {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
       gap: 1rem;
-      margin-bottom: 2rem;
     }
-    
+
     .menu-item {
-      background: linear-gradient(45deg, #e63946, #f72585);
+      background: linear-gradient(45deg, #2978b5, #29c7ac);
       color: white;
-      padding: 1rem;
+      padding: 0.8rem;
       border-radius: 10px;
       text-align: center;
       cursor: pointer;
       transition: transform 0.3s ease, box-shadow 0.3s ease;
       border: none;
-      font-size: 1.1rem;
+      font-size: 1rem;
+      font-weight: bold;
+      box-shadow: 0 4px 15px rgba(41, 199, 172, 0.3);
     }
-    
+
     .menu-item:hover {
-      transform: translateY(-5px);
-      box-shadow: 0 5px 15px rgba(255, 255, 255, 0.2);
+      transform: translateY(-3px);
+      box-shadow: 0 5px 20px rgba(41, 199, 172, 0.4);
     }
-    
+
     #output {
       background: rgba(255, 255, 255, 0.05);
       border-radius: 10px;
       padding: 1rem;
-      min-height: 100px;
       margin-top: 1rem;
       text-align: center;
       white-space: pre-line;
-      font-size: 1.1rem;
-      line-height: 1.5;
+      font-size: 1rem;
+      line-height: 1.4;
     }
-    
-    @keyframes glow {
-      0% {
-        box-shadow: 0 0 5px #fff;
+
+    @media only screen and (max-width: 600px) {
+      .container {
+        padding: 1.5rem;
       }
-      50% {
-        box-shadow: 0 0 20px #fff, 0 0 30px #f72585;
+
+      .title {
+        font-size: 1.5rem;
       }
-      100% {
-        box-shadow: 0 0 5px #fff;
+
+      .menu-item {
+        font-size: 0.9rem;
+        padding: 0.6rem;
       }
-    }
-    
-    .menu-item:active {
-      animation: glow 0.5s ease-in-out;
     }
   </style>
 </head>
@@ -88,6 +87,8 @@
   <div class="container">
     <h1 class="title">🎲 線上骰子遊戲</h1>
     <div class="game-menu">
+      <button class="menu-item" onclick="register()">註冊</button>
+      <button class="menu-item" onclick="login()">登入</button>
       <button class="menu-item" onclick="joinGame()">加入遊戲</button>
       <button class="menu-item" onclick="dailyCheckIn()">每日簽到</button>
       <button class="menu-item" onclick="showWallet()">查看錢包</button>
@@ -101,13 +102,15 @@
 
   <script>
     let players = JSON.parse(localStorage.getItem("players")) || {};
+    let currentUser = localStorage.getItem("currentUser");
+
     const initialChips = 5000;
     const dailyReward = 5000;
 
-    function getPlayer() {
-      let userId = prompt("請輸入你的ID:");
-      if (!userId) return null;
-      
+    function register() {
+      let userId = prompt("請輸入你的ID進行註冊:");
+      if (!userId) return;
+
       if (!players[userId]) {
         players[userId] = {
           chips: initialChips,
@@ -117,23 +120,45 @@
           wins: 0,
           losses: 0
         };
+        document.getElementById("output").innerText = 
+          `註冊成功！歡迎 ${players[userId].name}！`;
+        saveData();
+      } else {
+        document.getElementById("output").innerText = "該ID已被註冊，請嘗試其他ID。";
       }
-      return userId;
+    }
+
+    function login() {
+      let userId = prompt("請輸入你的ID進行登入:");
+      if (players[userId]) {
+        currentUser = userId;
+        localStorage.setItem("currentUser", currentUser);
+        document.getElementById("output").innerText = 
+          `登入成功！歡迎回來，${players[currentUser].name}！`;
+      } else {
+        document.getElementById("output").innerText = 
+          "此ID尚未註冊，請先註冊。";
+      }
+    }
+
+    function checkLogin() {
+      if (!currentUser) {
+        document.getElementById("output").innerText = "請先登入才能使用此功能。";
+        return false;
+      }
+      return true;
     }
 
     function joinGame() {
-      let userId = getPlayer();
-      if (!userId) return;
+      if (!checkLogin()) return;
       document.getElementById("output").innerText = 
-        `${players[userId].name}，歡迎加入遊戲！\n你有 ${players[userId].chips} 個籌碼。`;
-      saveData();
+        `${players[currentUser].name}，歡迎加入遊戲！\n你有 ${players[currentUser].chips} 個籌碼。`;
     }
 
     function dailyCheckIn() {
-      let userId = getPlayer();
-      if (!userId) return;
-      
-      let player = players[userId];
+      if (!checkLogin()) return;
+
+      let player = players[currentUser];
       let currentTime = new Date().getTime();
       if (currentTime - player.lastClaimed >= 86400000) {
         player.chips += dailyReward;
@@ -149,10 +174,9 @@
     }
 
     function showWallet() {
-      let userId = getPlayer();
-      if (!userId) return;
+      if (!checkLogin()) return;
       
-      let player = players[userId];
+      let player = players[currentUser];
       document.getElementById("output").innerText = 
         `玩家名稱: ${player.name}\n` +
         `籌碼數量: ${player.chips}\n` +
@@ -163,6 +187,8 @@
     }
 
     function showRanking() {
+      if (!checkLogin()) return;
+
       let ranking = Object.values(players)
         .sort((a, b) => b.chips - a.chips)
         .slice(0, 5);
@@ -183,11 +209,10 @@
     }
 
     function placeBet() {
-      let userId = getPlayer();
-      if (!userId) return;
-      
+      if (!checkLogin()) return;
+
       let amount = parseInt(prompt("請輸入下注金額:"));
-      if (isNaN(amount) || amount > players[userId].chips || amount <= 0) {
+      if (isNaN(amount) || amount > players[currentUser].chips || amount <= 0) {
         document.getElementById("output").innerText = 
           "下注金額無效或籌碼不足，請重新下注。";
         return;
@@ -197,22 +222,20 @@
       let playerSum = rollDice();
       let result = playerSum > dealerSum ? "勝利 🎉" : "失敗 😢";
 
-      players[userId].chips += result.includes("勝利") ? amount : -amount;
-      players[userId][result.includes("勝利") ? "wins" : "losses"] += 1;
+      players[currentUser].chips += result.includes("勝利") ? amount : -amount;
+      players[currentUser][result.includes("勝利") ? "wins" : "losses"] += 1;
 
       document.getElementById("output").innerText = 
         `莊家點數: ${dealerSum}\n` +
         `玩家點數: ${playerSum}\n` +
-        `結果: ${result}\n` +
-        `籌碼變化: ${result.includes("勝利") ? "+" : "-"}${amount}\n` +
-        `當前籌碼: ${players[userId].chips}`;
+        `${result}！\n` +
+        `當前籌碼: ${players[currentUser].chips}`;
       
       saveData();
     }
 
     function rollDice() {
-      return [1, 2, 3].map(() => Math.floor(Math.random() * 6) + 1)
-        .reduce((a, b) => a + b, 0);
+      return Math.floor(Math.random() * 6) + 1 + Math.floor(Math.random() * 6) + 1;
     }
 
     function saveData() {
