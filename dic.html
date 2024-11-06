@@ -2,6 +2,7 @@
 <html>
 <head>
   <style>
+    /* 基本樣式調整 */
     body {
       font-family: 'Microsoft JhengHei', sans-serif;
       background: linear-gradient(135deg, #1a1a2e, #2978b5, #16213e);
@@ -12,7 +13,7 @@
       justify-content: center;
       align-items: center;
     }
-    
+
     .container {
       background: rgba(255, 255, 255, 0.1);
       backdrop-filter: blur(15px);
@@ -22,7 +23,7 @@
       width: 90%;
       max-width: 500px;
     }
-    
+
     .title {
       text-align: center;
       color: #29c7ac;
@@ -30,30 +31,24 @@
       margin-bottom: 1.5rem;
       text-shadow: 0 0 15px rgba(41, 199, 172, 0.7);
     }
-    
-    .game-menu {
+
+    .game-menu, .auth-form {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      grid-template-columns: 1fr;
       gap: 1rem;
+      margin-top: 1rem;
     }
 
-    .menu-item {
+    .menu-item, .auth-item {
       background: linear-gradient(45deg, #2978b5, #29c7ac);
       color: white;
       padding: 0.8rem;
       border-radius: 10px;
       text-align: center;
       cursor: pointer;
-      transition: transform 0.3s ease, box-shadow 0.3s ease;
       border: none;
       font-size: 1rem;
       font-weight: bold;
-      box-shadow: 0 4px 15px rgba(41, 199, 172, 0.3);
-    }
-
-    .menu-item:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 5px 20px rgba(41, 199, 172, 0.4);
     }
 
     #output {
@@ -67,96 +62,99 @@
       line-height: 1.4;
     }
 
-    @media only screen and (max-width: 600px) {
-      .container {
-        padding: 1.5rem;
-      }
-
-      .title {
-        font-size: 1.5rem;
-      }
-
-      .menu-item {
-        font-size: 0.9rem;
-        padding: 0.6rem;
-      }
+    input[type="text"], input[type="password"] {
+      padding: 0.5rem;
+      border-radius: 5px;
+      border: none;
+      font-size: 1rem;
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1 class="title">🎲 線上骰子遊戲</h1>
-    <div class="game-menu">
-      <button class="menu-item" onclick="register()">註冊</button>
-      <button class="menu-item" onclick="login()">登入</button>
+    <h1 class="title">🎲 炫彩骰子遊戲</h1>
+    
+    <!-- 註冊和登入表單 -->
+    <div id="auth" class="auth-form">
+      <input id="authUserId" type="text" placeholder="請輸入你的ID">
+      <input id="authPassword" type="password" placeholder="請輸入你的密碼">
+      <button class="auth-item" onclick="register()">註冊</button>
+      <button class="auth-item" onclick="login()">登入</button>
+    </div>
+    
+    <!-- 遊戲選單 -->
+    <div id="gameMenu" class="game-menu" style="display: none;">
       <button class="menu-item" onclick="joinGame()">加入遊戲</button>
       <button class="menu-item" onclick="dailyCheckIn()">每日簽到</button>
       <button class="menu-item" onclick="showWallet()">查看錢包</button>
       <button class="menu-item" onclick="showRanking()">查看排名</button>
       <button class="menu-item" onclick="placeBet()">下注</button>
     </div>
+    
     <div id="output">
-      歡迎來到線上骰子遊戲！
+      歡迎來到炫彩骰子遊戲！
     </div>
   </div>
 
   <script>
     let players = JSON.parse(localStorage.getItem("players")) || {};
-    let currentUser = localStorage.getItem("currentUser");
-
+    let currentUser = null;
     const initialChips = 5000;
     const dailyReward = 5000;
 
     function register() {
-      let userId = prompt("請輸入你的ID進行註冊:");
-      if (!userId) return;
+      const userId = document.getElementById("authUserId").value;
+      const password = document.getElementById("authPassword").value;
 
-      if (!players[userId]) {
-        players[userId] = {
-          chips: initialChips,
-          claimedReward: false,
-          lastClaimed: new Date().getTime() - 86400000,
-          name: `玩家 ${userId}`,
-          wins: 0,
-          losses: 0
-        };
-        document.getElementById("output").innerText = 
-          `註冊成功！歡迎 ${players[userId].name}！`;
-        saveData();
-      } else {
-        document.getElementById("output").innerText = "該ID已被註冊，請嘗試其他ID。";
+      if (!userId || !password) {
+        alert("請填寫ID和密碼進行註冊！");
+        return;
       }
+      if (players[userId]) {
+        alert("該ID已存在，請嘗試其他ID！");
+        return;
+      }
+
+      players[userId] = {
+        chips: initialChips,
+        claimedReward: false,
+        lastClaimed: new Date().getTime() - 86400000,
+        password: password,
+        name: `玩家 ${userId}`,
+        wins: 0,
+        losses: 0
+      };
+      alert("註冊成功！請登入。");
+      saveData();
     }
 
     function login() {
-      let userId = prompt("請輸入你的ID進行登入:");
-      if (players[userId]) {
-        currentUser = userId;
-        localStorage.setItem("currentUser", currentUser);
-        document.getElementById("output").innerText = 
-          `登入成功！歡迎回來，${players[currentUser].name}！`;
-      } else {
-        document.getElementById("output").innerText = 
-          "此ID尚未註冊，請先註冊。";
-      }
-    }
+      const userId = document.getElementById("authUserId").value;
+      const password = document.getElementById("authPassword").value;
 
-    function checkLogin() {
-      if (!currentUser) {
-        document.getElementById("output").innerText = "請先登入才能使用此功能。";
-        return false;
+      if (!userId || !password) {
+        alert("請填寫ID和密碼進行登入！");
+        return;
       }
-      return true;
+      if (!players[userId] || players[userId].password !== password) {
+        alert("ID或密碼錯誤，請重新輸入！");
+        return;
+      }
+
+      currentUser = userId;
+      document.getElementById("auth").style.display = "none";
+      document.getElementById("gameMenu").style.display = "grid";
+      document.getElementById("output").innerText = `${players[userId].name}，歡迎登入！`;
     }
 
     function joinGame() {
-      if (!checkLogin()) return;
+      if (!currentUser) return;
       document.getElementById("output").innerText = 
         `${players[currentUser].name}，歡迎加入遊戲！\n你有 ${players[currentUser].chips} 個籌碼。`;
     }
 
     function dailyCheckIn() {
-      if (!checkLogin()) return;
+      if (!currentUser) return;
 
       let player = players[currentUser];
       let currentTime = new Date().getTime();
@@ -174,7 +172,7 @@
     }
 
     function showWallet() {
-      if (!checkLogin()) return;
+      if (!currentUser) return;
       
       let player = players[currentUser];
       document.getElementById("output").innerText = 
@@ -186,30 +184,8 @@
         `每日簽到: ${player.claimedReward ? "已領取" : "未領取"}`;
     }
 
-    function showRanking() {
-      if (!checkLogin()) return;
-
-      let ranking = Object.values(players)
-        .sort((a, b) => b.chips - a.chips)
-        .slice(0, 5);
-      
-      let rankingText = "🏆 玩家排行榜 🏆\n\n";
-      ranking.forEach((player, idx) => {
-        rankingText += 
-          `第 ${idx + 1} 名\n` +
-          `---------------\n` +
-          `玩家名稱: ${player.name}\n` +
-          `籌碼: ${player.chips}\n` +
-          `勝場: ${player.wins}\n` +
-          `敗場: ${player.losses}\n` +
-          `勝率: ${((player.wins / (player.wins + player.losses)) * 100 || 0).toFixed(1)}%\n` +
-          `---------------\n`;
-      });
-      document.getElementById("output").innerText = rankingText;
-    }
-
     function placeBet() {
-      if (!checkLogin()) return;
+      if (!currentUser) return;
 
       let amount = parseInt(prompt("請輸入下注金額:"));
       if (isNaN(amount) || amount > players[currentUser].chips || amount <= 0) {
@@ -228,7 +204,8 @@
       document.getElementById("output").innerText = 
         `莊家點數: ${dealerSum}\n` +
         `玩家點數: ${playerSum}\n` +
-        `${result}！\n` +
+        `結果: ${result}\n` +
+        `籌碼變化: ${result.includes("勝利") ? "+" : "-"}${amount}\n` +
         `當前籌碼: ${players[currentUser].chips}`;
       
       saveData();
@@ -241,6 +218,30 @@
     function saveData() {
       localStorage.setItem("players", JSON.stringify(players));
     }
+
+    function showRanking() {
+    if (!currentUser) return;
+
+    // 將玩家資料轉換成陣列，並根據籌碼數量從多到少排序
+    let ranking = Object.values(players).sort((a, b) => b.chips - a.chips);
+
+    // 顯示排名，最多顯示前 5 名
+    let rankingText = "🏆 玩家排名:\n";
+    ranking.slice(0, 5).forEach((player, index) => {
+        // 判斷當前玩家是否為登入玩家
+        if (player.name === players[currentUser].name) {
+        // 當前玩家標註箭頭符號並使用特定顏色 (例如絢彩藍)
+        rankingText += `➡️${index + 1}. ${player.name}</span> - 籌碼: ${player.chips}\n`;
+        } else {
+        rankingText += `${index + 1}. ${player.name} - 籌碼: ${player.chips}\n`;
+        }
+    });
+
+    document.getElementById("output").innerHTML = rankingText;
+    }
+
+
+
   </script>
 </body>
 </html>
